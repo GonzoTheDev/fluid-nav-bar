@@ -1,6 +1,4 @@
 import 'package:fluid_bottom_nav_bar/fluid_bottom_nav_bar.dart';
-import 'package:fluid_bottom_nav_bar/src/fluid_nav_bar_icon.dart';
-import 'package:flutter/animation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 
@@ -48,6 +46,10 @@ class FluidNavBarItem extends StatefulWidget {
   /// The delay factor of the animations ( < 1 is faster, > 1 is slower)
   final double animationFactor;
 
+  // Added title and titlePosition parameters
+  final String? title;
+  final TitlePosition titlePosition;
+
   FluidNavBarItem(
     this.svgPath,
     this.icon,
@@ -57,8 +59,10 @@ class FluidNavBarItem extends StatefulWidget {
     this.unselectedForegroundColor,
     this.backgroundColor,
     this.scaleFactor,
-    this.animationFactor,
-  )   : assert(scaleFactor >= 1.0),
+    this.animationFactor, {
+    this.title,
+    this.titlePosition = TitlePosition.below, 
+  })   : assert(scaleFactor >= 1.0),
         assert(svgPath == null || icon == null,
             'Cannot provide both an iconPath and an icon.'),
         assert(!(svgPath == null && icon == null),
@@ -150,68 +154,90 @@ class _FluidNavBarItemState extends State<FluidNavBarItem>
   }
 
   @override
-  Widget build(context) {
-    const ne = FluidNavBarItem.nominalExtent;
+Widget build(context) {
+  const ne = FluidNavBarItem.nominalExtent;
 
-    final scaleAnimation =
-        _selected ? _activatingAnimation : _inactivatingAnimation;
+  final scaleAnimation = _selected ? _activatingAnimation : _inactivatingAnimation;
 
-    return GestureDetector(
-      onTap: widget.onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        constraints: BoxConstraints.tight(ne),
+  // Define the icon widget with animations
+  Widget iconWidget = Container(
+    alignment: Alignment.center,
+    child: Stack(children: <Widget>[
+      Container(
         alignment: Alignment.center,
-        child: Container(
-          margin: EdgeInsets.all(ne.width / 2 - _iconSize),
-          constraints: BoxConstraints.tight(Size.square(_iconSize * 2)),
-          decoration: ShapeDecoration(
-            color: widget.backgroundColor,
-            shape: CircleBorder(),
-          ),
-          transform: Matrix4.translationValues(0, -_yOffsetAnimation.value, 0),
-          child: Stack(children: <Widget>[
-            Container(
-              alignment: Alignment.center,
-              child: widget.icon == null
-                  ? SvgPicture.asset(
-                      widget.svgPath!,
-                      color: widget.unselectedForegroundColor,
-                      width: _iconSize,
-                      height: _iconSize * scaleAnimation.value,
-                      colorBlendMode: BlendMode.srcIn,
-                    )
-                  : Icon(
-                      widget.icon,
-                      color: widget.unselectedForegroundColor,
-                      size: _iconSize * scaleAnimation.value,
-                    ),
-            ),
-            Container(
-              alignment: Alignment.center,
-              child: ClipRect(
-                clipper: _SvgPictureClipper(
-                    _activeColorClipAnimation.value * scaleAnimation.value),
-                child: widget.icon == null
-                    ? SvgPicture.asset(
-                        widget.svgPath!,
-                        color: widget.selectedForegroundColor,
-                        width: _iconSize,
-                        height: _iconSize * scaleAnimation.value,
-                        colorBlendMode: BlendMode.srcIn,
-                      )
-                    : Icon(
-                        widget.icon,
-                        color: widget.selectedForegroundColor,
-                        size: _iconSize * scaleAnimation.value,
-                      ),
+        child: widget.icon == null
+            ? SvgPicture.asset(
+                widget.svgPath!,
+                color: widget.unselectedForegroundColor,
+                width: _iconSize,
+                height: _iconSize * scaleAnimation.value,
+                colorBlendMode: BlendMode.srcIn,
+              )
+            : Icon(
+                widget.icon,
+                color: widget.unselectedForegroundColor,
+                size: _iconSize * scaleAnimation.value,
               ),
-            ),
-          ]),
+      ),
+      Container(
+        alignment: Alignment.center,
+        child: ClipRect(
+          clipper: _SvgPictureClipper(_activeColorClipAnimation.value * scaleAnimation.value),
+          child: widget.icon == null
+              ? SvgPicture.asset(
+                  widget.svgPath!,
+                  color: widget.selectedForegroundColor,
+                  width: _iconSize,
+                  height: _iconSize * scaleAnimation.value,
+                  colorBlendMode: BlendMode.srcIn,
+                )
+              : Icon(
+                  widget.icon,
+                  color: widget.selectedForegroundColor,
+                  size: _iconSize * scaleAnimation.value,
+                ),
         ),
       ),
-    );
-  }
+    ]),
+  );
+
+  // Define the title widget if a title is provided
+  Widget titleWidget = widget.title != null ? Text(
+    widget.title!,
+    style: TextStyle(
+      color: _selected ? widget.selectedForegroundColor : widget.unselectedForegroundColor,
+      fontSize: 12,
+    ),
+  ) : SizedBox.shrink(); // Use SizedBox.shrink() if there's no title to ensure it takes up no space
+
+  // Arrange the icon and title based on the titlePosition
+  List<Widget> contentWidgets = widget.titlePosition == TitlePosition.above
+      ? [titleWidget, SizedBox(height: 4), iconWidget] // Add space between title and icon
+      : [iconWidget, SizedBox(height: 4), titleWidget];
+
+  return GestureDetector(
+    onTap: widget.onTap,
+    behavior: HitTestBehavior.opaque,
+    child: Container(
+      constraints: BoxConstraints.tight(ne),
+      alignment: Alignment.center,
+      child: Container(
+        margin: EdgeInsets.all(ne.width / 2 - _iconSize),
+        constraints: BoxConstraints.tight(Size.square(_iconSize * 2)),
+        decoration: ShapeDecoration(
+          color: widget.backgroundColor,
+          shape: CircleBorder(),
+        ),
+        transform: Matrix4.translationValues(0, -_yOffsetAnimation.value, 0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: contentWidgets,
+        ),
+      ),
+    ),
+  );
+}
+  
 
   void _startAnimation() {
     if (_selected) {

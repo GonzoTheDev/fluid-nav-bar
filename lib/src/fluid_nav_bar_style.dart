@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+/// Defines the position of the title relative to the icon in the navigation bar.
+enum TitlePosition { above, below }
+
 /// An immutable style in which paint [FluidNavBar]
 ///
 ///

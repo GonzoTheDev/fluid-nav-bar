@@ -1,5 +1,6 @@
 import 'package:fluid_bottom_nav_bar/fluid_bottom_nav_bar.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 
 
@@ -21,6 +22,7 @@ class FluidNavBarIcon {
   final IconData? icon;
 
   // Add a parameter for titlePosition with a default value.
+  final String? title;
   final TitlePosition titlePosition;
 
   /// The color used to paint the SVG when the item is active
@@ -43,6 +45,7 @@ class FluidNavBarIcon {
     this.unselectedForegroundColor,
     this.backgroundColor,
     this.extras,
+    this.title,
     this.titlePosition = TitlePosition.below,
   })  : assert(iconPath == null || svgPath == null || icon == null, 'Cannot provide both an svgPath and an icon.'),
         assert(iconPath != null || svgPath != null || icon != null, 'An svgPath or an icon must be provided.');
